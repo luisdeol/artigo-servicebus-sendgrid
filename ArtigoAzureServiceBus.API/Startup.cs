@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ArtigoAzureServiceBus.API.Consumers;
+using ArtigoAzureServiceBus.API.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -10,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SendGrid.Extensions.DependencyInjection;
 
 namespace ArtigoAzureServiceBus.API
 {
@@ -25,6 +28,10 @@ namespace ArtigoAzureServiceBus.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSendGrid(options => options.ApiKey = Configuration.GetSection("Notification:SendGridAPIKey").Value);
+
+            services.AddSingleton<EmailNotificationMessageConsumer>();
+
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
 
@@ -42,6 +49,10 @@ namespace ArtigoAzureServiceBus.API
             }
 
             app.UseHttpsRedirection();
+
+            var bus = app.ApplicationServices.GetService<EmailNotificationMessageConsumer>();
+            bus.RegisterHandler();
+
             app.UseMvc();
         }
     }
